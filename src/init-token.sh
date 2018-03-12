@@ -43,5 +43,4 @@ APPROLE_TOKEN=$(curl -sS --request POST \
   jq -r 'if .errors then . else .auth.client_token end')
 validateVaultResponse 'approle id' "${APPROLE_TOKEN}"
 
-echo ${APPROLE_TOKEN}
 echo "export VAULT_TOKEN=${APPROLE_TOKEN}" > /env/variables
