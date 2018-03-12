@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 
-#!/bin/bash
 set -eo pipefail
 
 validateVaultResponse () {
@@ -25,27 +24,23 @@ VAULT_LOGIN_TOKEN=$(curl -sS --request POST \
   -H "Content-Type: application/json" \
   -d '{"role":"'"${VAULT_LOGIN_ROLE}"'","jwt":"'"${KUBE_SA_TOKEN}"'"}' | \
   jq -r 'if .errors then . else .auth.client_token end')
-
 validateVaultResponse 'vault login token' "${VAULT_LOGIN_TOKEN}"
 
 ROLE_ID=$(curl -sS --header "X-Vault-Token: ${VAULT_LOGIN_TOKEN}" \
   ${VAULT_ADDR}/v1/auth/approle/role/${VAULT_LOGIN_ROLE}/role-id | \
   jq -r 'if .errors then . else .data.role_id end')
-
 validateVaultResponse 'role id' "${ROLE_ID}"
 
 SECRET_ID=$(curl -sS --header "X-Vault-Token: ${VAULT_LOGIN_TOKEN}" \
   --request POST \
   ${VAULT_ADDR}/v1/auth/approle/role/${VAULT_LOGIN_ROLE}/secret-id | \
   jq -r 'if .errors then . else .data.secret_id end')
-
 validateVaultResponse 'secret id' "${SECRET_ID}"
 
 APPROLE_TOKEN=$(curl -sS --request POST \
   --data '{"role_id":"'"$ROLE_ID"'","secret_id":"'"$SECRET_ID"'"}' \
   ${VAULT_ADDR}/v1/auth/approle/login | \
   jq -r 'if .errors then . else .auth.client_token end')
-
 validateVaultResponse 'approle id' "${APPROLE_TOKEN}"
 
 echo ${APPROLE_TOKEN}
