@@ -49,4 +49,4 @@ APPROLE_TOKEN=$(curl -sS --request POST \
 validateVaultResponse 'approle id' "${APPROLE_TOKEN}"
 
 echo ${APPROLE_TOKEN}
-echo "VAULT_TOKEN=${APPROLE_TOKEN}" > /env/variables
+echo "export VAULT_TOKEN=${APPROLE_TOKEN}" > /env/variables
