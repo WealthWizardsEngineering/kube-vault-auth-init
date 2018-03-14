@@ -80,4 +80,6 @@ do
     echo "export ${ACTUAL_KEY}=${SECERT_VALUE}" >> /env/variables
 done
 
-    echo "export LEASE_IDS=${LEASE_IDS}" >> /env/variables
+echo "export LEASE_IDS=${LEASE_IDS}" >> /env/variables
+
+echo "Finished."
