@@ -9,14 +9,15 @@ validateVaultResponse () {
   fi
 }
 
-# Allow me to pass a KUBE_SA_TOKEN so I can test this without having to run it on Kube
+# Allow KUBE_SA_TOKEN to be injected so that it can be tested without
+# being deployed to Kubernetes
 if [[ -z $KUBE_SA_TOKEN ]]; then
   KUBE_SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 fi
 
 #########################################################################
 
-echo "Getting token from Vault server: ${VAULT_ADDR}"
+echo "Getting auth token from Vault server: ${VAULT_ADDR}"
 
 # Login to Vault and so I can get an approle token
 VAULT_LOGIN_TOKEN=$(curl -sS --request POST \
@@ -44,3 +45,39 @@ APPROLE_TOKEN=$(curl -sS --request POST \
 validateVaultResponse 'approle id' "${APPROLE_TOKEN}"
 
 echo "export VAULT_TOKEN=${APPROLE_TOKEN}" > /env/variables
+
+#########################################################################
+
+echo "Getting secrets from Vault"
+
+# Get all environment variables prefixed with SECRET_ and retrieve the secret from vault based on the value
+SECRET_KEYS=$(printenv | grep '^SECRET_' | awk -F "=" '{print $1}')
+
+for key in ${SECRET_KEYS}
+do
+ value=$(printenv ${key})
+ ACTUAL_KEY=$(echo ${key} | sed 's/^SECRET_//g')
+
+ vault_secret_key=$(echo ${value} |awk -F "?" '{print $1}')
+ vault_data_key=$(echo ${value} |awk -F "?" '{print $2}')
+ [[ -z ${vault_data_key} ]] &&  vault_data_key=value
+
+ SECRET_LOOKUP_RESPONSE=$(curl -sS \
+    --header "X-Vault-Token: ${APPROLE_TOKEN}" \
+    ${VAULT_ADDR}/v1/${vault_secret_key} | \
+      jq -r 'if .errors then . else . end')
+    validateVaultResponse "secret (${vault_secret_key})" "${SECRET_LOOKUP_RESPONSE}"
+
+    LEASE_ID=$(echo ${SECRET_LOOKUP_RESPONSE} | jq -r '.lease_id')
+    SECERT_VALUE=$(echo ${SECRET_LOOKUP_RESPONSE} | jq -r ".data.${vault_data_key}")
+    if [[ ${LEASE_ID} ]]; then
+        if [[ ${LEASE_IDS} ]]; then
+            LEASE_IDS="${LEASE_IDS},${LEASE_ID}"
+        else
+            LEASE_IDS="${LEASE_ID}"
+        fi
+    fi
+    echo "export ${ACTUAL_KEY}=${SECERT_VALUE}" >> /env/variables
+done
+
+    echo "export LEASE_IDS=${LEASE_IDS}" >> /env/variables
