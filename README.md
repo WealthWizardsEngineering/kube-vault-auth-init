@@ -53,6 +53,8 @@ path "secret/some/secret" {
 
 ### Create an Kubernetes role 
 
+This should have a limited lifespan as it is only needed to bootstrap the AppRole. 
+
 ```
 vault write auth/kubernetes/role/my-kube-role \
     bound_service_account_names=my-app-service-account \
@@ -65,10 +67,18 @@ vault write auth/kubernetes/role/my-kube-role \
 
 ### Create an AppRole
 
+The 'secret_id_ttl' and 'secret_id_num_uses' should be kept limited, as we only used it to get a token.
+
+We want a periodic token - this means that as long as it is renewed it never expires. 'Period' should be set
+with consideration to how often you want to renew the token. If you are going to check if it needs renewing
+6 hours, then a sensible period might be 24 hours. Read the AppRole documentation to customise the other
+options based on your requirements.
+
 ```
 vault write auth/approle/role/my-app-role \
     secret_id_ttl=5m \
-    period=10m \
+    secret_id_num_uses=3 \
+    period=24h \
     bound_cidr_list="10.0.0.0/32" \
     bind_secret_id="true" \
     policies="my-app-role-policy"
