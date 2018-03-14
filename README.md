@@ -145,3 +145,62 @@ for you
 * secret values - One for each of the SECRET_ variables defined above containing the value of the secret
 that was retrieved from Vault
 
+# Kubernetes deployment
+
+kubectl apply -f myfile.yml
+
+```
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-app-service-account
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: my-app
+  annotations:
+    tags: my-app
+spec:
+  replicas: 1
+  minReadySeconds: 35
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: backend
+    spec:
+      serviceAccountName: my-app-service-account
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+      initContainers:
+      - name: vault-init
+        image: daveshepherd/kubernetes-vault-auth-init
+        env:
+        - name: KUBERNETES_AUTH_PATH
+          value: "kubernetes"
+        - name: VAULT_ADDR
+          value: "https://vault.example.com"
+        - name: VAULT_LOGIN_ROLE
+          value: "my-app-role"
+        - name: SECRET_SOME_SECRET
+          value: "secret/from/somewhere"
+        volumeMounts:
+        - name: shared-data
+          mountPath: /env
+      containers:
+      - name: my-app
+        image: my-app
+        imagePullPolicy: Always
+        terminationMessagePath: "/var/log/my-app_termination.log"
+        command: ["/bin/sh", "-c", "source /env/variables; ./run-my-app.sh"]
+        volumeMounts:
+        - name: shared-data
+          mountPath: /env
+```
