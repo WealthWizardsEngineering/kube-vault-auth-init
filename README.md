@@ -89,7 +89,6 @@ The init container requires the following environmental variables:
 
 The following are optional:
 
-* RENEW_INTERVAL - the number of seconds to wait between checking if the auth token or secrets require renewal
 * KUBE_SA_TOKEN - used to inject the Kubernetes auth token, for testing without Kubernetes
 * SECRET_* - any environment variable that starts with 'SECRET_' will be injected into the container with
 the value retrieved from Vault
@@ -139,7 +138,7 @@ application container and then run `source /env/variables` as part of your conta
 The outputs are:
 
 * VAULT_TOKEN - The Vault auth token to use, of your application can talk to Vault directly
-* SECRET_LEASE_IDS - A list of lease ids for the secrets defined in the SECRET_ variables above, this can
+* LEASE_IDS - A list of lease ids for the secrets defined in the SECRET_ variables above, this can
 be used to renew the secrets, see the Kubernetes Vault Auth Renew for a sidecar container that can do this
 for you
 * secret values - One for each of the SECRET_ variables defined above containing the value of the secret
