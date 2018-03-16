@@ -181,7 +181,7 @@ spec:
         emptyDir: {}
       initContainers:
       - name: vault-init
-        image: daveshepherd/kubernetes-vault-auth-init
+        image: wealthwizardsengineering/kube-vault-auth-init
         env:
         - name: KUBERNETES_AUTH_PATH
           value: "kubernetes"
