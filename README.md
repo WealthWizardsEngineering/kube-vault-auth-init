@@ -9,9 +9,9 @@ This will then authenticate against the AppRole and provide the Vault token in a
 other containers that share the volume.
 
 This is useful to externalise the Vault authentication from the containers you want to run. When used in
-conjuction with the Kubernets Vault Auth Renewer, then the secrets can be injected into a container and
-renewed for as long as the pod is running, without the main container requiring any knowledge of Vault.
-This allows you to run public docker images without modification. 
+conjunction with the [Kubernetes Vault Auth Renewer](https://github.com/WealthWizardsEngineering/kube-vault-auth-renewer),
+then the secrets can be injected into a container and renewed for as long as the pod is running, without the main
+container requiring any knowledge of Vault. This allows you to run public docker images without modification. 
 
 ## Prerequisites
 
@@ -168,16 +168,7 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
   name: my-app
-  annotations:
-    tags: my-app
 spec:
-  replicas: 1
-  minReadySeconds: 35
-  revisionHistoryLimit: 3
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -206,8 +197,6 @@ spec:
       containers:
       - name: my-app
         image: my-app
-        imagePullPolicy: Always
-        terminationMessagePath: "/var/log/my-app_termination.log"
         command: ["/bin/sh", "-c", "source /env/variables; ./run-my-app.sh"]
         volumeMounts:
         - name: shared-data
