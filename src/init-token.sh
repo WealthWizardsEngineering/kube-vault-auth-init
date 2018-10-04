@@ -77,7 +77,7 @@ do
             LEASE_IDS="${LEASE_ID}"
         fi
     fi
-    echo "export ${ACTUAL_KEY}=${VALUE_OF_SECRET}" >> /env/variables
+    echo "export ${ACTUAL_KEY}=\"${VALUE_OF_SECRET}\"" >> /env/variables
 done
 
 echo "export LEASE_IDS=${LEASE_IDS}" >> /env/variables
