@@ -100,6 +100,8 @@ The init container requires the following environmental variables:
 The following are optional:
 
 * KUBE_SA_TOKEN - used to inject the Kubernetes auth token, for testing without Kubernetes
+* VAULT_TOKEN - used to inject a Vault token, for testing without kubernetes of app_roles
+* VARIABLES_FILE - used to override the location of the outfile for testing
 * SECRET_* - any environment variable that starts with 'SECRET_' will be injected into the container with
 the value retrieved from Vault
 
@@ -122,6 +124,28 @@ CONSUL_TOKEN=some-consul-acl-token
 
 Where 'some-consul-acl-token' is stored in the the 'token' attribute of the following secret:
 consul/creds/my-acl-policy
+
+Or
+
+If there are multiple variables for the same vault path then only one request is made and all data keys are retrieved
+from the same Vault response. This is useful in the case of requesting access to secret backends, like a database,
+where you need more one field to access the resource. 
+
+For example:
+
+```
+SECRET_DATABASE_USER=database/creds/readonly?username
+SECRET_DATABASE_PASSWORD=database/creds/readonly?password
+```
+
+Will create:
+
+```
+DATABASE_USER=some-database-username
+DATABASE_PASSWORD=some-database-password
+```
+
+Where 'some-database-password' corresponds to the temporary user 'some-database-username' in the configured database.
 
 Or:
 
