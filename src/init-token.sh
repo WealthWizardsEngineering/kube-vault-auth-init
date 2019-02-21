@@ -62,7 +62,7 @@ function storeSecret () {
 
 # Allow VAULT_TOKEN or KUBE_SA_TOKEN to be injected so that it can be
 # tested without being deployed to Kubernetes
-if [[ -z VAULT_TOKEN ]]; then
+if [[ -z $VAULT_TOKEN ]]; then
     if [[ -z $KUBE_SA_TOKEN ]]; then
       KUBE_SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     fi
