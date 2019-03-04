@@ -110,7 +110,7 @@ do
   output_key=$(echo ${secret_key} | sed 's/^SECRET_//g')
 
   # If the variable is already in the variables file then ignore it
-  if ! grep ${output_key} ${VARIABLES_FILE} > /dev/null; then
+  if ! grep "export ${output_key}=" ${VARIABLES_FILE} > /dev/null; then
     vault_key=$(echo ${env_value} |awk -F "?" '{print $1}')
 
     vault_response=$(retrieveSecret ${VAULT_TOKEN} ${vault_key})
