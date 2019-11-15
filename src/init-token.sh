@@ -12,9 +12,7 @@ retrieveSecret () {
   local vault_token=$1
   local key=$2
 
-  local response=$(curl -sS \
-    --header "X-Vault-Token: ${vault_token}" \
-    ${VAULT_ADDR}/v1/${key} | \
+  local response=$(VAULT_TOKEN=${vault_token} vault kv get -format=json ${key} | \
     jq -r '.')
   validateVaultResponse "secret (${key})" "${response}"
   echo ${response}
@@ -49,8 +47,7 @@ function storeSecret () {
   local field_name=$(extractFieldName $(printenv ${key}))
 
   local output_key=$(echo ${key} | sed 's/^SECRET_//g')
-  local value=$(echo ${vault_response} | jq -r ".data.${field_name}")
-
+  local value=$(echo ${vault_response} | jq -r "if .data.metadata then .data.data.${field_name} else .data.${field_name} end")
   echo "export ${output_key}=\"${value}\"" >> ${VARIABLES_FILE}
 }
 
