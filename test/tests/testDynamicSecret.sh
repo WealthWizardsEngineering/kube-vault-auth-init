@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 printf "\n************************\n"
-printf "Running test: Dynamic secret\n"
+printf "Running test: Test that dynamic secrets can be retrieved with multiple fields and stored in separate output variables\n"
 
 ################################################
 

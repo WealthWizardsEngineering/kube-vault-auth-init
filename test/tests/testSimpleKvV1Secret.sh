@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 printf "\n************************\n"
-printf "Running test: Simple KV v1 secret\n"
+printf "Running test: Test that kv-v1 secrets can be retrieved and stored in separate output variables\n"
 
 ################################################
 
