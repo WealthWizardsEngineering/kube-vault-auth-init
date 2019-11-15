@@ -75,3 +75,8 @@ function assertVaultToken()
       return 1
     fi
 }
+
+function cleanEnv()
+{
+    unset KUBE_SA_TOKEN KUBERNETES_AUTH_PATH VAULT_LOGIN_ROLE KUBERNETES_ROLE APPROLE_ROLE VARIABLES_FILE "${!SECRET_@}"
+}

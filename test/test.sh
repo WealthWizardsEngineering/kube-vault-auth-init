@@ -12,6 +12,9 @@ sleep 10
 source ${DIR}/tests/testSimpleKvV1Secret.sh || RESULT=1
 source ${DIR}/tests/testSimpleKvV2Secret.sh || RESULT=1
 source ${DIR}/tests/testDynamicSecret.sh || RESULT=1
+source ${DIR}/tests/testErrorReturnedWhenNoTokenOrSAProvided.sh || RESULT=1
+source ${DIR}/tests/testErrorReturnedWhenMandatoryVariablesNotProvided.sh || RESULT=1
+source ${DIR}/tests/testErrorReturnedWhenVaultAuthenticationFails.sh || RESULT=1
 
 if [[ "$RESULT" -gt 0 ]]; then
     printf "\n************************\n"

@@ -226,3 +226,15 @@ spec:
         - name: shared-data
           mountPath: /env
 ```
+
+## Testing
+
+Tests can be run by executing:
+
+```
+make test
+```
+
+This will use docker-compose to start Vault, a mock server (for simulate kubernetes) and any other required Vault
+secrets backends required by the tests.
+

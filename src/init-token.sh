@@ -53,6 +53,10 @@ function storeSecret () {
 
 #########################################################################
 
+[[ -z ${VAULT_ADDR} ]] && echo "VAULT_ADDR is required" && exit 1
+
+#########################################################################
+
 [[ -z ${VARIABLES_FILE} ]] && VARIABLES_FILE='/env/variables'
 
 #########################################################################
@@ -61,8 +65,16 @@ function storeSecret () {
 # tested without being deployed to Kubernetes
 if [[ -z $VAULT_TOKEN ]]; then
     if [[ -z $KUBE_SA_TOKEN ]]; then
-      KUBE_SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+        [ -f /var/run/secrets/kubernetes.io/serviceaccount/token ] || \
+            echo "No authentications variables; either VAULT_TOKEN or KUBE_SA_TOKEN variables must be set or the kubernetes service account token file is available" && exit 1
+        KUBE_SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     fi
+
+    [[ -z ${KUBERNETES_AUTH_PATH} ]] && KUBERNETES_AUTH_PATH="kubernetes"
+    [[ -z ${KUBERNETES_ROLE} ]] && KUBERNETES_ROLE="${VAULT_LOGIN_ROLE}"
+    [[ -z ${KUBERNETES_ROLE} ]] && echo "KUBERNETES_ROLE or VAULT_LOGIN_ROLE is required" && exit 1
+    [[ -z ${APPROLE_ROLE} ]] && APPROLE_ROLE="${VAULT_LOGIN_ROLE}"
+    [[ -z ${APPROLE_ROLE} ]] && echo "APPROLE_ROLE or VAULT_LOGIN_ROLEis required" && exit 1
 
     echo "Getting auth token from Vault server: ${VAULT_ADDR}"
 
@@ -70,18 +82,18 @@ if [[ -z $VAULT_TOKEN ]]; then
     VAULT_LOGIN_TOKEN=$(curl -sS --request POST \
       ${VAULT_ADDR}/v1/auth/${KUBERNETES_AUTH_PATH}/login \
       -H "Content-Type: application/json" \
-      -d '{"role":"'"${VAULT_LOGIN_ROLE}"'","jwt":"'"${KUBE_SA_TOKEN}"'"}' | \
+      -d '{"role":"'"${KUBERNETES_ROLE}"'","jwt":"'"${KUBE_SA_TOKEN}"'"}' | \
       jq -r 'if .errors then . else .auth.client_token end')
     validateVaultResponse 'vault login token' "${VAULT_LOGIN_TOKEN}"
 
     VAULT_ROLE_ID=$(curl -sS --header "X-Vault-Token: ${VAULT_LOGIN_TOKEN}" \
-      ${VAULT_ADDR}/v1/auth/approle/role/${VAULT_LOGIN_ROLE}/role-id | \
+      ${VAULT_ADDR}/v1/auth/approle/role/${APPROLE_ROLE}/role-id | \
       jq -r 'if .errors then . else .data.role_id end')
     validateVaultResponse 'role id' "${VAULT_ROLE_ID}"
 
     VAULT_SECRET_ID=$(curl -sS --header "X-Vault-Token: ${VAULT_LOGIN_TOKEN}" \
       --request POST \
-      ${VAULT_ADDR}/v1/auth/approle/role/${VAULT_LOGIN_ROLE}/secret-id | \
+      ${VAULT_ADDR}/v1/auth/approle/role/${APPROLE_ROLE}/secret-id | \
       jq -r 'if .errors then . else .data.secret_id end')
     validateVaultResponse 'secret id' "${VAULT_SECRET_ID}"
 
