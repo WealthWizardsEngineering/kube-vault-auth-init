@@ -27,7 +27,7 @@ RESULT="${PIPESTATUS[0]}"
 # assert output
 assertVaultToken "$(getOutputValue ${VARIABLES_FILE} VAULT_TOKEN)" || RESULT=1
 assertEquals "MY_SECRET should be set" "don't tell anyone" "$(getOutputValue ${VARIABLES_FILE} MY_SECRET)" || RESULT=1
-assertEquals "LEASE_IDS should not be set" "" "$(getOutputValue ${VARIABLES_FILE} LEASE_IDS)" || RESULT=1
+assertEmpty "LEASE_IDS should not be set" "$(getOutputValue ${VARIABLES_FILE} LEASE_IDS)" || RESULT=1
 
 ################################################
 

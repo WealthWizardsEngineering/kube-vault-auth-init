@@ -6,6 +6,13 @@ services:
     ports:
       - "1080:1080"
 
+  mongo:
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=my-token
+    image: mongo
+    ports:
+      - "27017:27017"
+
   vault:
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=my-token
@@ -21,6 +28,7 @@ services:
       - VAULT_TOKEN=my-token
     depends_on:
       - mock
+      - mongo
       - vault
     volumes:
       - ".:/usr/test"

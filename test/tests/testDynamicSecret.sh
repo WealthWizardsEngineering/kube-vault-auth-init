@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 printf "\n************************\n"
-printf "Running test: Simple KV v1 secret\n"
+printf "Running test: Dynamic secret\n"
 
 ################################################
 
@@ -14,9 +14,13 @@ export VARIABLES_FILE=$(mktemp -d)/variables
 ################################################
 
 # set up inputs for this test
-VAULT_TOKEN=${SETUP_VAULT_TOKEN} vault secrets enable -version=1 -path=secret-v1 kv > /dev/null
-VAULT_TOKEN=${SETUP_VAULT_TOKEN} vault write secret-v1/some/secret value="don't tell anyone" > /dev/null
-export SECRET_MY_SECRET=secret-v1/some/secret
+VAULT_TOKEN=${SETUP_VAULT_TOKEN} vault write database/roles/my-role \
+    db_name=my-mongodb-database \
+    creation_statements='{ "db": "admin", "roles": [{ "role": "readWrite" }, {"role": "read", "db": "foo"}] }' \
+    default_ttl="1h" \
+    max_ttl="24h" > /dev/null
+export SECRET_DB_USERNAME=database/creds/my-role?username
+export SECRET_DB_PASSWORD=database/creds/my-role?password
 
 /usr/src/init-token.sh  2>&1 >&1 | sed 's/^/>> /'
 RESULT="${PIPESTATUS[0]}"
@@ -26,13 +30,14 @@ RESULT="${PIPESTATUS[0]}"
 
 # assert output
 assertVaultToken "$(getOutputValue ${VARIABLES_FILE} VAULT_TOKEN)" || RESULT=1
-assertEquals "MY_SECRET should be set" "don't tell anyone" "$(getOutputValue ${VARIABLES_FILE} MY_SECRET)" || RESULT=1
-assertEmpty "LEASE_IDS should not be set" "$(getOutputValue ${VARIABLES_FILE} LEASE_IDS)" || RESULT=1
+assertStartsWith "DB_USERNAME should be set" "v-app-role-my-role-" "$(getOutputValue ${VARIABLES_FILE} DB_USERNAME)" || RESULT=1
+assertNotEmpty "DB_PASSWORD should be set" "$(getOutputValue ${VARIABLES_FILE} DB_PASSWORD)" || RESULT=1
+assertStartsWith "LEASE_IDS should contain the database lease" "database/creds/my-role/" "$(getOutputValue ${VARIABLES_FILE} LEASE_IDS)" || RESULT=1
 
 ################################################
 
 # clean up
-VAULT_TOKEN=${SETUP_VAULT_TOKEN} vault secrets disable secret-v1 > /dev/null
+VAULT_TOKEN=${SETUP_VAULT_TOKEN} vault delete database/roles/my-role > /dev/null
 VAULT_TOKEN=${SETUP_VAULT_TOKEN} vault token revoke "$(getOutputValue ${VARIABLES_FILE} VAULT_TOKEN)" > /dev/null
 
 unset KUBE_SA_TOKEN KUBERNETES_AUTH_PATH VAULT_LOGIN_ROLEs VARIABLES_FILE SECRET_MY_SECRET
