@@ -1,0 +1,47 @@
+eversion: 2
+jobs:
+  test:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: tests
+          command: make build test
+  buildAndDeploy:
+    machine: true
+    steps:
+      - add_ssh_keys
+      - checkout
+      - run:
+          name : build-docker-image
+          command: |
+            docker build -t quay.io/wealthwizards/kube-vault-auth-init .
+      - deploy:
+          name : deploy-docker-image
+          command: |
+            docker login -u $DOCKER_USER -p $DOCKER_PASS quay.io
+            docker push quay.io/wealthwizards/kube-vault-auth-init
+  buildDockerImage:
+    machine: true
+    steps:
+      - add_ssh_keys
+      - checkout
+      - run:
+          name : build-docker-image
+          command: |
+            docker build -t quay.io/wealthwizards/kube-vault-auth-init .
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - test
+      - buildDockerImage:
+          filters:
+            branches:
+              ignore: master
+      - buildAndDeploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
