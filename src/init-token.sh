@@ -3,8 +3,15 @@
 set -eo pipefail
 
 validateVaultResponse () {
-  if echo ${2} | grep "errors"; then
-    echo "ERROR: unable to retrieve ${1}: ${2}" >&2
+  local action="$1"
+  local responsePayload="$2"
+
+  if echo "${responsePayload}" | grep "errors" > /dev/null; then
+    local message=$(echo "${responsePayload}" | jq -r '.[] | join (",")')
+    echo "ERROR: unable to retrieve ${action}, error message: ${message}" >&2
+    return 1
+  else
+    return 0
   fi
 }
 
@@ -84,24 +91,24 @@ if [[ -z $VAULT_TOKEN ]]; then
       -H "Content-Type: application/json" \
       -d '{"role":"'"${KUBERNETES_ROLE}"'","jwt":"'"${KUBE_SA_TOKEN}"'"}' | \
       jq -r 'if .errors then . else .auth.client_token end')
-    validateVaultResponse 'vault login token' "${VAULT_LOGIN_TOKEN}"
+    validateVaultResponse 'vault login token' "${VAULT_LOGIN_TOKEN}" || exit 1
 
     VAULT_ROLE_ID=$(curl -sS --header "X-Vault-Token: ${VAULT_LOGIN_TOKEN}" \
       ${VAULT_ADDR}/v1/auth/approle/role/${APPROLE_ROLE}/role-id | \
       jq -r 'if .errors then . else .data.role_id end')
-    validateVaultResponse 'role id' "${VAULT_ROLE_ID}"
+    validateVaultResponse 'role id' "${VAULT_ROLE_ID}" || exit 1
 
     VAULT_SECRET_ID=$(curl -sS --header "X-Vault-Token: ${VAULT_LOGIN_TOKEN}" \
       --request POST \
       ${VAULT_ADDR}/v1/auth/approle/role/${APPROLE_ROLE}/secret-id | \
       jq -r 'if .errors then . else .data.secret_id end')
-    validateVaultResponse 'secret id' "${VAULT_SECRET_ID}"
+    validateVaultResponse 'secret id' "${VAULT_SECRET_ID}" || exit 1
 
     VAULT_TOKEN=$(curl -sS --request POST \
       --data '{"role_id":"'"$VAULT_ROLE_ID"'","secret_id":"'"$VAULT_SECRET_ID"'"}' \
       ${VAULT_ADDR}/v1/auth/approle/login | \
       jq -r 'if .errors then . else .auth.client_token end')
-    validateVaultResponse 'approle id' "${VAULT_TOKEN}"
+    validateVaultResponse 'approle id' "${VAULT_TOKEN}" || exit 1
 fi
 
 echo "export VAULT_TOKEN=${VAULT_TOKEN}" > ${VARIABLES_FILE}
