@@ -95,7 +95,10 @@ The init container requires the following environmental variables:
 
 * VAULT_ADDR - the full address of Vault, e.g. https://vault.example.com
 * KUBERNETES_AUTH_PATH - the name of the kubernetes auth method, e.g. kubernetes
-* VAULT_LOGIN_ROLE - the name the approle created above, e.g. my-app-role
+* VAULT_LOGIN_ROLE - the name the approle/kubernetes roles created above if they are both the same, e.g. my-app-role,
+otherwise use KUBERNETES_ROLE and APPROLE_ROLE
+* KUBERNETES_ROLE - the kubernetes role created above, defaults to VAULT_LOGIN_ROLE, e.g. my-kube-role
+* APPROLE_ROLE - the approle role created above, defaults to VAULT_LOGIN_ROLE, e.g. my-app-role
 
 The following are optional:
 
@@ -205,7 +208,7 @@ spec:
         emptyDir: {}
       initContainers:
       - name: vault-init
-        image: wealthwizardsengineering/kube-vault-auth-init
+        image: quay.io/wealthwizards/kube-vault-auth-init
         env:
         - name: KUBERNETES_AUTH_PATH
           value: "kubernetes"
@@ -238,3 +241,4 @@ make test
 This will use docker-compose to start Vault, a mock server (for simulate kubernetes) and any other required Vault
 secrets backends required by the tests.
 
+Tests can be added as a script within the test/tests directory, and executed from the main test/test.sh script.
