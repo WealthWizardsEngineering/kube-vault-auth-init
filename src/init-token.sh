@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
 
-set -eo pipefail
-
 validateVaultResponse () {
   local action="$1"
   local responsePayload="$2"
@@ -19,10 +17,18 @@ retrieveSecret () {
   local vault_token=$1
   local key=$2
 
-  local response=$(VAULT_TOKEN=${vault_token} vault kv get -format=json ${key} | \
-    jq -r '.')
-  validateVaultResponse "secret (${key})" "${response}"
-  echo ${response}
+  response="$(VAULT_TOKEN=${vault_token} vault kv get -format=json ${key} 2>&1)"
+  if [[ $? -gt 0 ]]; then
+    echo "ERROR: unable to retrieve secret (${key}), error message: ${response}" >&2
+    return 1
+  else
+    if validateVaultResponse "secret (${key})" "${response}"; then
+      echo ${response}
+      return 0
+    else
+      return 1
+    fi
+  fi
 }
 
 appendToCommaSeparatedList () {
@@ -132,7 +138,9 @@ do
     vault_key=$(echo ${env_value} |awk -F "?" '{print $1}')
 
     vault_response=$(retrieveSecret ${VAULT_TOKEN} ${vault_key})
-
+    if [[ $? -gt 0 ]]; then
+      exit 1
+    fi
     matching_secret_keys=$(printenv | grep -e "=${vault_key}" | awk -F "=" '{print $1}')
     for matching_secret_key in ${matching_secret_keys}
     do
