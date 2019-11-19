@@ -60,10 +60,9 @@ function storeSecret () {
 
 #########################################################################
 
+echo "Running kube-vault-auth-init"
+
 [[ -z ${VAULT_ADDR} ]] && echo "VAULT_ADDR is required" && exit 1
-
-#########################################################################
-
 [[ -z ${VARIABLES_FILE} ]] && VARIABLES_FILE='/env/variables'
 
 #########################################################################
@@ -72,8 +71,11 @@ function storeSecret () {
 # tested without being deployed to Kubernetes
 if [[ -z $VAULT_TOKEN ]]; then
     if [[ -z $KUBE_SA_TOKEN ]]; then
-        [ -f /var/run/secrets/kubernetes.io/serviceaccount/token ] || \
-            echo "No authentications variables; either VAULT_TOKEN or KUBE_SA_TOKEN variables must be set or the kubernetes service account token file is available" && exit 1
+        if [[ ! -f "/var/run/secrets/kubernetes.io/serviceaccount/token" ]]; then
+          printf "No authentications variables; either VAULT_TOKEN or KUBE_SA_TOKEN variables must be set or the "
+          printf "kubernetes service account token file is available.\n"
+          exit 1
+        fi
         KUBE_SA_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     fi
 
