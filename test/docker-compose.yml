@@ -1,0 +1,50 @@
+version: "3"
+services:
+
+  mock:
+    image: jamesdbloom/mockserver
+    ports:
+      - "1080:1080"
+
+  mongo:
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=my-token
+    image: mongo
+    ports:
+      - "27017:27017"
+
+  vault:
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=my-token
+    image: vault
+    ports:
+      - "8200:8200"
+
+  init:
+    build: ..
+    command: /usr/test/setup/setup.sh
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=my-token
+    depends_on:
+      - mock
+      - mongo
+      - vault
+    volumes:
+      - ".:/usr/test"
+    working_dir: /usr/test
+
+  test:
+    build: ..
+    command: /usr/test/test.sh
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - SETUP_VAULT_TOKEN=my-token
+    depends_on:
+      - mock
+      - vault
+      - init
+    volumes:
+      - "../src:/usr/src"
+      - ".:/usr/test"
+    working_dir: /usr/src

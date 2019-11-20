@@ -1,0 +1,7 @@
+path "*" {
+  capabilities = ["read"]
+}
+
+path "secret-v2/data/super-secret" {
+  capabilities = ["deny"]
+}
