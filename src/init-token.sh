@@ -17,11 +17,18 @@ retrieveSecret () {
   local vault_token=$1
   local key=$2
 
-  response="$(VAULT_TOKEN=${vault_token} vault kv get -format=json ${key} 2>&1)"
+  response="$(VAULT_TOKEN=${vault_token} vault read -format=json ${key} 2>&1)"
   if [[ $? -gt 0 ]]; then
     echo "ERROR: unable to retrieve secret (${key}), error message: ${response}" >&2
     return 1
   else
+    if echo "${response}" | grep "Invalid path for a versioned K/V secrets engine" > /dev/null; then
+      response="$(VAULT_TOKEN=${vault_token} vault kv get -format=json ${key} 2>&1)"
+      if [[ $? -gt 0 ]]; then
+        echo "ERROR: unable to retrieve secret (${key}), error message: ${response}" >&2
+        return 1
+      fi
+    fi
     if validateVaultResponse "secret (${key})" "${response}"; then
       echo ${response}
       return 0
