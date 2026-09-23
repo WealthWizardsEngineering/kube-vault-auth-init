@@ -1,5 +1,11 @@
 # Kubernetes Vault Auth Init Docker Image
 
+> [!WARNING]
+> **This repository is deprecated.** The `quay.io/wealthwizards/kube-vault-auth-init`
+> image will be unavailable from **30 September 2026**. After that date any pod with
+> this init container will fail to start, because the image can no longer be pulled.
+> Migrate off it before then.
+
 This Docker image is designed to bootstrap the [Vault](https://www.vaultproject.io) secrets in a Kubernetes
 pods. This uses the [Kubernetes Auth Method](https://www.vaultproject.io/docs/auth/kubernetes.html) to
 request the secrets required to generate an [AppRole Auth](https://www.vaultproject.io/docs/auth/approle.html)
